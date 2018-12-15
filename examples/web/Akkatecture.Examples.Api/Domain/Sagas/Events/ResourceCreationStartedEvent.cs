@@ -21,12 +21,23 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-using Akka.Event;
+using System;
+using Akkatecture.Aggregates;
+using Akkatecture.Examples.Api.Domain.Aggregates.Resource;
 
-namespace Akkatecture.Akka
+namespace Akkatecture.Examples.Api.Domain.Sagas.Events
 {
-    public interface IAkkatectureActor
+    public class ResourceCreationStartedEvent : AggregateEvent<ResourceCreationSaga, ResourceCreationSagaId>
     {
-        ILoggingAdapter Logger { get; }
+        public ResourceId ResourceId { get; }
+        public DateTime StartedAt { get; }
+        
+        public ResourceCreationStartedEvent(
+            ResourceId resourceId,
+            DateTime startedAt)
+        {
+            ResourceId = resourceId;
+            StartedAt = startedAt;
+        }
     }
 }

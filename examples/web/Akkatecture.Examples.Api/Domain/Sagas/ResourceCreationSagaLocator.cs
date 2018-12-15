@@ -1,9 +1,5 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
-// Modified from original source https://github.com/eventflow/EventFlow
-//
 // Copyright (c) 2018 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
@@ -25,10 +21,25 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-namespace Akkatecture.Sagas
+using System;
+using Akkatecture.Aggregates;
+using Akkatecture.Examples.Api.Domain.Aggregates.Resource.Events;
+using Akkatecture.Sagas;
+
+namespace Akkatecture.Examples.Api.Domain.Sagas
 {
-    public interface ISagaManages
+    public class ResourceCreationSagaLocator : ISagaLocator<ResourceCreationSagaId>
     {
-        
+        public const string LocatorIdPrefix = "resourcecreation";
+        public ResourceCreationSagaId LocateSaga(IDomainEvent domainEvent)
+        {
+            switch (domainEvent.GetAggregateEvent())
+            {
+                case ResourceCreatedEvent evt:
+                    return new ResourceCreationSagaId($"{LocatorIdPrefix}-{domainEvent.GetIdentity()}");
+                default:
+                    throw new ArgumentException(nameof(domainEvent));
+            }
+        }
     }
 }

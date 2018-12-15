@@ -55,8 +55,7 @@ namespace Akkatecture.Aggregates
                 Context.System.EventStream.Subscribe(Self, typeof(DeadLetter));
                 Receive<DeadLetter>(DeadLetterHandler);
             }
-
-
+             
         }
 
         protected virtual bool Dispatch(TCommand command)

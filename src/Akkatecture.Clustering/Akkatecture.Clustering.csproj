@@ -1,9 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <Version>0.0.0</Version>
-    <PackageVersion>0.0.0</PackageVersion>
-    <AssemblyVersion>0.0.0</AssemblyVersion>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -15,7 +12,7 @@
     <Description>
       a cqrs and event sourcing framework for akka.net
     </Description>
-    <PackageTags>akka cqrs es eventsourcing clustering</PackageTags>
+    <PackageTags>akka cqrs es eventsourcing clustering actors microservices actor-model</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Lutando/Akkatecture</RepositoryUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/Lutando/Akkatecture/master/LICENSE</PackageLicenseUrl>
@@ -24,10 +21,10 @@
     <PackageIconUrl>https://akkatecture.net/logos/logo-512.png</PackageIconUrl>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Akka.Cluster" Version="1.3.5" />
-    <PackageReference Include="Akka.Cluster.Sharding" Version="1.3.5-beta60" />
-    <PackageReference Include="Akka.Cluster.Tools" Version="1.3.5" />
-    <PackageReference Include="Akka.Persistence" Version="1.3.5" />
+    <PackageReference Include="Akka.Cluster" Version="1.3.9" />
+    <PackageReference Include="Akka.Cluster.Sharding" Version="1.3.9-beta68" />
+    <PackageReference Include="Akka.Cluster.Tools" Version="1.3.9" />
+    <PackageReference Include="Akka.Persistence" Version="1.3.9" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Akkatecture\Akkatecture.csproj" />

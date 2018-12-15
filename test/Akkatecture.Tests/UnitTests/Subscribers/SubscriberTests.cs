@@ -26,6 +26,7 @@ using Akka.Actor;
 using Akka.TestKit.Xunit2;
 using Akkatecture.TestHelpers.Aggregates;
 using Akkatecture.TestHelpers.Aggregates.Commands;
+using Akkatecture.TestHelpers.Aggregates.Entities;
 using Akkatecture.TestHelpers.Aggregates.Events;
 using Akkatecture.TestHelpers.Subscribers;
 using Xunit;
@@ -49,7 +50,7 @@ namespace Akkatecture.Tests.UnitTests.Subscribers
         {
             var probe = CreateTestActor("probeActor");
             Sys.EventStream.Subscribe(probe, typeof(TestSubscribedEventHandled<TestCreatedEvent>));
-            var aggregateSubscriber = Sys.ActorOf(Props.Create(() => new TestAggregateSubscriber()), "test-subscriber");        
+            Sys.ActorOf(Props.Create(() => new TestAggregateSubscriber()), "test-subscriber");        
             var aggregateManager = Sys.ActorOf(Props.Create(() => new TestAggregateManager()), "test-aggregatemanager");
             
             var aggregateId = TestAggregateId.New;
@@ -58,8 +59,24 @@ namespace Akkatecture.Tests.UnitTests.Subscribers
 
             ExpectMsg<TestSubscribedEventHandled<TestCreatedEvent>>(x =>
                 x.AggregateEvent.TestAggregateId == command.AggregateId);
+            
+        }
+        
+        [Fact]
+        [Category(Category)]
+        public void Subscriber_ReceivedAsyncEvent_FromAggregatesEmit()
+        {
+            var probe = CreateTestActor("probeActor");
+            Sys.EventStream.Subscribe(probe, typeof(TestAsyncSubscribedEventHandled<TestCreatedEvent>));
+            Sys.ActorOf(Props.Create(() => new TestAsyncAggregateSubscriber()), "test-subscriber");        
+            var aggregateManager = Sys.ActorOf(Props.Create(() => new TestAggregateManager()), "test-aggregatemanager");
+            
+            var aggregateId = TestAggregateId.New;
+            var command = new CreateTestCommand(aggregateId);
+            aggregateManager.Tell(command);
 
-
+            ExpectMsg<TestAsyncSubscribedEventHandled<TestCreatedEvent>>(x =>
+                x.AggregateEvent.TestAggregateId == command.AggregateId);
         }
     }
 }

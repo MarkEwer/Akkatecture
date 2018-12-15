@@ -31,7 +31,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Akka.Event;
 using Akka.Persistence;
@@ -69,7 +68,7 @@ namespace Akkatecture.Sagas.AggregateSaga
             Logger = Context.GetLogger();
             Settings = new AggregateSagaSettings(Context.System.Settings.Config);
             var idValue = Context.Self.Path.Name;
-            PersistenceId = Context.Self.Path.Name;
+            PersistenceId = idValue;
             Id = (TIdentity) Activator.CreateInstance(typeof(TIdentity), idValue);
 
             if (Id == null)
@@ -99,48 +98,8 @@ namespace Akkatecture.Sagas.AggregateSaga
 
             if (Settings.AutoReceive)
             {
-                var type = GetType();
-
-                var subscriptionTypes =
-                    type
-                        .GetSagaEventSubscriptionTypes();
-
-                var methods = type
-                    .GetTypeInfo()
-                    .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                    .Where(mi =>
-                    {
-                        if (mi.Name != "Handle") return false;
-                        var parameters = mi.GetParameters();
-                        return
-                            parameters.Length == 1;
-                    })
-                    .ToDictionary(
-                        mi => mi.GetParameters()[0].ParameterType,
-                        mi => mi);
-
-
-                var method = type
-                    .GetBaseType("ReceivePersistentActor")
-                    .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                    .Where(mi =>
-                    {
-                        if (mi.Name != "CommandAsync") return false;
-                        var parameters = mi.GetParameters();
-                        return
-                            parameters.Length == 2
-                            && parameters[0].ParameterType.Name.Contains("Func");
-                    })
-                    .First();
-
-                foreach (var subscriptionType in subscriptionTypes)
-                {
-                    var funcType = typeof(Func<,>).MakeGenericType(subscriptionType, typeof(Task));
-                    var subscriptionFunction = Delegate.CreateDelegate(funcType, this, methods[subscriptionType]);
-                    var actorReceiveMethod = method.MakeGenericMethod(subscriptionType);
-
-                    actorReceiveMethod.Invoke(this, new[] { subscriptionFunction, null });
-                }
+                InitReceives();
+                InitAsyncReceives();
             }
             
             Register(State);
@@ -157,6 +116,105 @@ namespace Akkatecture.Sagas.AggregateSaga
                 Recover<SnapshotOffer>(Recover);
 
         }
+
+        public void InitReceives()
+        {
+            var type = GetType();
+
+            var subscriptionTypes =
+                type
+                    .GetSagaEventSubscriptionTypes();
+
+            var methods = type
+                .GetTypeInfo()
+                .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(mi =>
+                {
+                    if (mi.Name != "Handle")
+                        return false;
+
+                    var parameters = mi.GetParameters();
+
+                    return
+                        parameters.Length == 1;
+                })
+                .ToDictionary(
+                    mi => mi.GetParameters()[0].ParameterType,
+                    mi => mi);
+
+
+            var method = type
+                .GetBaseType("ReceivePersistentActor")
+                .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(mi =>
+                {
+                    if (mi.Name != "Command") return false;
+                    var parameters = mi.GetParameters();
+                    return
+                        parameters.Length == 1
+                        && parameters[0].ParameterType.Name.Contains("Func");
+                })
+                .First();
+
+            foreach (var subscriptionType in subscriptionTypes)
+            {
+                var funcType = typeof(Func<,>).MakeGenericType(subscriptionType, typeof(bool));
+                var subscriptionFunction = Delegate.CreateDelegate(funcType, this, methods[subscriptionType]);
+                var actorReceiveMethod = method.MakeGenericMethod(subscriptionType);
+
+                actorReceiveMethod.Invoke(this, new[] { subscriptionFunction });
+            }
+        }
+
+        public void InitAsyncReceives()
+        {
+            var type = GetType();
+
+            var subscriptionTypes =
+                type
+                    .GetAsyncSagaEventSubscriptionTypes();
+
+            var methods = type
+                .GetTypeInfo()
+                .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(mi =>
+                {
+                    if (mi.Name != "Handle")
+                        return false;
+
+                    var parameters = mi.GetParameters();
+
+                    return
+                        parameters.Length == 1;
+                })
+                .ToDictionary(
+                    mi => mi.GetParameters()[0].ParameterType,
+                    mi => mi);
+
+
+            var method = type
+                .GetBaseType("ReceivePersistentActor")
+                .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(mi =>
+                {
+                    if (mi.Name != "CommandAsync") return false;
+                    var parameters = mi.GetParameters();
+                    return
+                        parameters.Length == 2
+                        && parameters[0].ParameterType.Name.Contains("Func");
+                })
+                .First();
+
+            foreach (var subscriptionType in subscriptionTypes)
+            {
+                var funcType = typeof(Func<,>).MakeGenericType(subscriptionType, typeof(Task));
+                var subscriptionFunction = Delegate.CreateDelegate(funcType, this, methods[subscriptionType]);
+                var actorReceiveMethod = method.MakeGenericMethod(subscriptionType);
+
+                actorReceiveMethod.Invoke(this, new[] { subscriptionFunction, null });
+            }
+        }
+
 
         protected virtual void Emit<TAggregateEvent>(TAggregateEvent aggregateEvent, IMetadata metadata = null)
             where TAggregateEvent : IAggregateEvent<TAggregateSaga, TIdentity>
@@ -297,8 +355,6 @@ namespace Akkatecture.Sagas.AggregateSaga
         {
             try
             {
-
-                //TODO event upcasting goes here
                 Logger.Debug($"Recovering with event of type [{aggregateEvent.GetType().PrettyPrint()}] ");
                 ApplyEvent(aggregateEvent);
             }
@@ -315,8 +371,6 @@ namespace Akkatecture.Sagas.AggregateSaga
         {
             try
             {
-
-                //TODO event upcasting goes here
                 Logger.Debug($"Recovering with event of type [{domainEvent.GetType().PrettyPrint()}] ");
                 ApplyEvent(domainEvent.AggregateEvent);
             }

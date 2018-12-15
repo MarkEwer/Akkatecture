@@ -30,6 +30,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Akkatecture.Aggregates;
 using Akkatecture.Core;
 using Akkatecture.Sagas;
@@ -163,30 +164,28 @@ namespace Akkatecture.Extensions
                     mi => ReflectionHelper.CompileMethodInvocation<Action<TAggregateState, IAggregateEvent>>(type, "Apply", mi.GetParameters()[0].ParameterType));
         }
 
-        
-        internal static IReadOnlyList<Type> GetDomainEventSubscriberSubscriptionTypes<TAggregate, TIdentity>(this Type type)
-            where TAggregate : IAggregateRoot<TIdentity>
-            where TIdentity : IIdentity
+        internal static IReadOnlyList<Type> GetAsyncDomainEventSubscriberSubscriptionTypes(this Type type)
         {
-            var aggregateEventType = typeof(IAggregateEvent<TAggregate, TIdentity>);
+            //TODO
+            //Check generic arguments for sanity
+            //add checks for iaggregateroot
+            //add checks for iidentity
+            //add checks for iaggregatevent
 
             var interfaces = type
                 .GetTypeInfo()
                 .GetInterfaces()
                 .Select(i => i.GetTypeInfo())
                 .ToList();
-            var aggregateEventSubscriptionTypes = interfaces
-                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ISubscribeTo<,,>))
-                .Where(i => aggregateEventType.GetTypeInfo().IsAssignableFrom(i.GenericTypeArguments[2]))
-                .Select(i => i.GetGenericArguments()[2])
+            var domainEventTypes = interfaces
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ISubscribeToAsync<,,>))
+                .Select(i =>   typeof(IDomainEvent<,,>).MakeGenericType(i.GetGenericArguments()[0],i.GetGenericArguments()[1],i.GetGenericArguments()[2]))
                 .ToList();
-            var domainEventTypes = aggregateEventSubscriptionTypes
-                .Select(t => typeof(IDomainEvent<,,>).MakeGenericType(typeof(TAggregate), typeof(TIdentity), t))
-                .ToList();
+            
 
             return domainEventTypes;
         }
-        
+
         internal static IReadOnlyList<Type> GetDomainEventSubscriberSubscriptionTypes(this Type type)
         {
             //TODO
@@ -208,7 +207,63 @@ namespace Akkatecture.Extensions
 
             return domainEventTypes;
         }
+        
+        
+        private static readonly ConcurrentDictionary<Type, AggregateName> AggregateNameCache = new ConcurrentDictionary<Type, AggregateName>();
+        internal static AggregateName GetCommittedEventAggregateRootName(this Type type)
+        {
+            return AggregateNameCache.GetOrAdd(
+                type,
+                t =>
+                {
+                    var interfaces = type
+                        .GetTypeInfo()
+                        .GetInterfaces()
+                        .Select(i => i.GetTypeInfo())
+                        .ToList();
 
+                    var aggregateEvent = interfaces
+                        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICommittedEvent<,>))
+                        .Select(i => i.GetGenericArguments()[0]).SingleOrDefault();
+
+
+                    if (aggregateEvent != null)
+                        return aggregateEvent.GetAggregateName();
+
+                    throw new ArgumentException(nameof(type));
+                });
+        }
+        
+        internal static IReadOnlyList<Type> GetAsyncSagaEventSubscriptionTypes(this Type type)
+        {
+            //TODO
+            //add checks for iaggregateroot
+            //add checks for iidentity
+            //add checks for iaggregatevent
+
+            var interfaces = type
+                .GetTypeInfo()
+                .GetInterfaces()
+                .Select(i => i.GetTypeInfo())
+                .ToList();
+
+            var handleEventTypes = interfaces
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ISagaHandlesAsync<,,>))
+                .Select(t => typeof(IDomainEvent<,,>).MakeGenericType(t.GetGenericArguments()[0],
+                    t.GetGenericArguments()[1], t.GetGenericArguments()[2]))
+                .ToList();
+
+            var startedByEventTypes = interfaces
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ISagaIsStartedByAsync<,,>))
+                .Select(t => typeof(IDomainEvent<,,>).MakeGenericType(t.GetGenericArguments()[0],
+                    t.GetGenericArguments()[1], t.GetGenericArguments()[2]))
+                .ToList();
+            
+            startedByEventTypes.AddRange(handleEventTypes);
+
+            return startedByEventTypes;
+        }
+        
         internal static IReadOnlyList<Type> GetSagaEventSubscriptionTypes(this Type type)
         {
             //TODO
