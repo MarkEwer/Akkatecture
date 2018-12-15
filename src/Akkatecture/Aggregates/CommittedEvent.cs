@@ -25,6 +25,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using System;
 using Akkatecture.Core;
 
 namespace Akkatecture.Aggregates
@@ -36,16 +37,30 @@ namespace Akkatecture.Aggregates
     {
         public TAggregateEvent AggregateEvent { get; }
         public TIdentity AggregateIdentity { get; }
-        public IMetadata Metadata { get; }
+        public Metadata Metadata { get; }
+        public long AggregateSequenceNumber { get; }
+        public DateTimeOffset Timestamp { get; }
 
         public CommittedEvent(
             TIdentity aggregateIdentity,
             TAggregateEvent aggregateEvent,
-            IMetadata metadata)
+            Metadata metadata,
+            DateTimeOffset timestamp,
+            long aggregateSequenceNumber)
         {
+            if (aggregateEvent == null) throw new ArgumentNullException(nameof(aggregateEvent));
+            if (metadata == null) throw new ArgumentNullException(nameof(metadata));
+            if (timestamp == default(DateTimeOffset)) throw new ArgumentNullException(nameof(timestamp));
+            if (aggregateEvent == null) throw new ArgumentNullException(nameof(aggregateEvent));
+            if (aggregateIdentity == null || string.IsNullOrEmpty(aggregateIdentity.Value)) throw new ArgumentNullException(nameof(aggregateIdentity));
+            
+            
+            AggregateIdentity = aggregateIdentity;
+            AggregateSequenceNumber = aggregateSequenceNumber;
             AggregateIdentity = aggregateIdentity;
             AggregateEvent = aggregateEvent;
             Metadata = metadata;
+            Timestamp = timestamp;
         }
         
         public IAggregateEvent GetAggregateEvent()

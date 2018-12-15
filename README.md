@@ -2,11 +2,9 @@
 <a href="https://akkatecture.net/"><img src="https://raw.githubusercontent.com/Lutando/Akkatecture/master/logo.svg?sanitize=true" width="100%" height="200"></a>
 
 
-[![Build Status](https://travis-ci.org/Lutando/Akkatecture.svg?branch=master)](https://travis-ci.org/Lutando/Akkatecture)
-[![Build status](https://ci.appveyor.com/api/projects/status/cxdg8eyk7d5nmqgj?svg=true)](https://ci.appveyor.com/project/Lutando/akkatecture)
-[![Nuget Package](https://img.shields.io/nuget/v/Akkatecture.svg?style=flat)](https://www.nuget.org/packages/Akkatecture/)
-[![Come Chat](https://img.shields.io/discord/440517592545755137.svg)](https://akkatecture.net/community)
-[![we are reactive](https://img.shields.io/badge/we_are-reactive-blue.svg?style=flat)](https://www.reactivemanifesto.org/)
+| nuget                                                                                                                      |                                                                                       master                                                                                      |                                                                                           dev                                                                                          |                                                   chat                                                   | who are we?                                                                                                                |
+|----------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------:|----------------------------------------------------------------------------------------------------------------------------|
+| [![Nuget Package](https://img.shields.io/nuget/v/Akkatecture.svg?style=flat)](https://www.nuget.org/packages/Akkatecture/) | [![Build status](https://dev.azure.com/lutando/Akkatecture/_apis/build/status/Akkatecture%20Master%20CI)](https://dev.azure.com/lutando/Akkatecture/_build/latest?definitionId=2) | [![Build status](https://dev.azure.com/lutando/Akkatecture/_apis/build/status/Akkatecture%20Development%20CI)](https://dev.azure.com/lutando/Akkatecture/_build/latest?definitionId=1) | [![Come Chat](https://img.shields.io/discord/440517592545755137.svg)](https://akkatecture.net/community) | [![we are reactive](https://img.shields.io/badge/we_are-reactive-blue.svg?style=flat)](https://www.reactivemanifesto.org/) |
 
 
 # Akkatecture
@@ -34,6 +32,8 @@ Akkatecture comes with a few examples on how to best use it:
 
 
 * **[Cluster](https://github.com/Lutando/Akkatecture/tree/master/examples/cluster):** A more involved sample that shows you how to do distributed aggregates using clustering. Read the [readme](https://github.com/Lutando/Akkatecture/tree/master/examples/cluster/README.md) for the sample for a good overview of the example.
+
+* **[Web](https://github.com/Lutando/Akkatecture/tree/master/examples/web):** This sample shows how to integrate akka into an aspnet core project, specifically how to inject actor references when using akkatecture. Furthermore this project models a long running process that might be run behind a web application or something similar. Read the [readme](https://github.com/Lutando/Akkatecture/tree/master/examples/web/README.md) for more detailed information about the example.
 
 * **[Tests](https://github.com/Lutando/Akkatecture/tree/master/test/Akkatecture.TestHelpers/Aggregates):** The test examples found in the Akkatecture.TestHelpers project is there to provide assistance when doing testing for Akkatecture. There is a simple domain modelled that includes an aggregate with a simple aggregate saga, and these are used to do simple black box style testing on Akkatecture using akka.net's TestKit.
 
@@ -70,8 +70,6 @@ Akkatecture is still in development. The goal of this projects first version is 
 
 akkatecture is currently missing these crucial features:
 - aggregate state snapshotting.
-- persisting event metadata.
-- typed actor references.
 - schedueled jobs.
 
 ### Contributing
