@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -44,9 +44,9 @@ namespace Akkatecture.Specifications.Provided
             _specification2 = specification2 ?? throw new ArgumentNullException(nameof(specification2));
         }
 
-        protected override IEnumerable<string> IsNotSatisfiedBecause(T account)
+        protected override IEnumerable<string> IsNotSatisfiedBecause(T aggregate)
         {
-            return _specification1.WhyIsNotSatisfiedBy(account).Concat(_specification2.WhyIsNotSatisfiedBy(account));
+            return _specification1.WhyIsNotSatisfiedBy(aggregate).Concat(_specification2.WhyIsNotSatisfiedBy(aggregate));
         }
     }
 }

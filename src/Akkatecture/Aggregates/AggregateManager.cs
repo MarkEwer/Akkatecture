@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -34,17 +34,18 @@ namespace Akkatecture.Aggregates
     public abstract class AggregateManager<TAggregate, TIdentity, TCommand> : ReceiveActor, IAggregateManager<TAggregate, TIdentity>
         where TAggregate : ReceivePersistentActor, IAggregateRoot<TIdentity>
         where TIdentity : IIdentity
-        where TCommand : class, ICommand<TAggregate, TIdentity>
+        where TCommand : ICommand<TAggregate, TIdentity>
     {
         protected ILoggingAdapter Logger { get; set; }
         protected Func<DeadLetter, bool> DeadLetterHandler => Handle;
         public AggregateManagerSettings Settings { get; }
+        public string Name { get; }
 
         protected AggregateManager()
         {
             Logger = Context.GetLogger();
             Settings = new AggregateManagerSettings(Context.System.Settings.Config);
-
+            Name = GetType().PrettyPrint();
             Receive<Terminated>(Terminate);
 
             if(Settings.AutoDispatchOnReceive)
@@ -60,7 +61,7 @@ namespace Akkatecture.Aggregates
 
         protected virtual bool Dispatch(TCommand command)
         {
-            Logger.Info($"{GetType().PrettyPrint()} received {command.GetType().PrettyPrint()}");
+            Logger.Info("AggregateManager of Type={0}; has received a command of Type={1}", Name, command.GetType().PrettyPrint());
 
             var aggregateRef = FindOrCreate(command.AggregateId);
 
@@ -72,7 +73,7 @@ namespace Akkatecture.Aggregates
 
         protected virtual bool ReDispatch(TCommand command)
         {
-            Logger.Info($"{GetType().PrettyPrint()} as dead letter {command.GetType().PrettyPrint()}");
+            Logger.Info("AggregateManager of Type={0}; is ReDispatching deadletter of Type={1}", Name, command.GetType().PrettyPrint());
 
             var aggregateRef = FindOrCreate(command.AggregateId);
 
@@ -84,9 +85,9 @@ namespace Akkatecture.Aggregates
         protected bool Handle(DeadLetter deadLetter)
         {
             if(deadLetter.Message is TCommand &&
-                (deadLetter.Message as TCommand).AggregateId.GetType() == typeof(TIdentity))
+                (deadLetter.Message as dynamic).AggregateId.GetType() == typeof(TIdentity))
             {
-                var command = deadLetter.Message as TCommand;
+                var command = deadLetter.Message as dynamic;
 
                 ReDispatch(command);
             }
@@ -97,7 +98,7 @@ namespace Akkatecture.Aggregates
 
         protected virtual bool Terminate(Terminated message)
         {
-            Logger.Warning($"{typeof(TAggregate).PrettyPrint()}: {message.ActorRef.Path} has terminated.");
+            Logger.Warning("Aggregate of Type={0}, and Id={1}; has terminated.",typeof(TAggregate).PrettyPrint(), message.ActorRef.Path.Name);
             Context.Unwatch(message.ActorRef);
             return true;
         }
@@ -106,7 +107,7 @@ namespace Akkatecture.Aggregates
         {
             var aggregate = Context.Child(aggregateId);
 
-            if(Equals(aggregate, ActorRefs.Nobody))
+            if(aggregate.IsNobody())
             {
                 aggregate = CreateAggregate(aggregateId);
             }
@@ -116,20 +117,21 @@ namespace Akkatecture.Aggregates
 
         protected virtual IActorRef CreateAggregate(TIdentity aggregateId)
         {
-            var aggregateRef = Context.ActorOf(Props.Create<TAggregate>(aggregateId), aggregateId.Value);
+            var aggregateRef = Context.ActorOf(Props.Create<TAggregate>(args: aggregateId), aggregateId.Value);
             Context.Watch(aggregateRef);
             return aggregateRef;
         }
 
         protected override SupervisorStrategy SupervisorStrategy()
         {
+            var logger = Logger;
             return new OneForOneStrategy(
                 maxNrOfRetries: 3,
                 withinTimeMilliseconds: 3000,
                 localOnlyDecider: x =>
                 {
 
-                    Logger.Warning($"[{GetType().PrettyPrint()}] Exception={x.ToString()} to be decided.");
+                    logger.Warning("AggregateManager of Type={0}; will supervise Exception={1} to be decided as {2}.",Name, x.ToString(), Directive.Restart);
                     return Directive.Restart;
                 });
         }

@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -32,10 +32,11 @@ namespace Akkatecture.TestHelpers.Aggregates.Commands
         public Test TestToGive { get; }
         
         public GiveTestCommand(
-            TestAggregateId aggregateId, 
+            TestAggregateId aggregateId,
+            CommandId sourceId, 
             TestAggregateId receiverAggregateId,
             Test testToGive)
-            : base(aggregateId)
+            : base(aggregateId, sourceId)
         {
             TestToGive = testToGive;
             ReceiverAggregateId = receiverAggregateId;

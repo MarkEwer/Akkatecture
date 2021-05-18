@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -35,7 +35,7 @@ namespace Akkatecture.Examples.Api.Domain.Sagas
         {
             switch (domainEvent.GetAggregateEvent())
             {
-                case ResourceCreatedEvent evt:
+                case ResourceCreatedEvent _:
                     return new ResourceCreationSagaId($"{LocatorIdPrefix}-{domainEvent.GetIdentity()}");
                 default:
                     throw new ArgumentException(nameof(domainEvent));

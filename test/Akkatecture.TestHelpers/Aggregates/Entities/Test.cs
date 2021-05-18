@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -27,6 +27,7 @@ namespace Akkatecture.TestHelpers.Aggregates.Entities
 {
     public class Test : Entity<TestId>
     {
+        public static Test New => new Test(TestId.New);
         public Test(TestId id)
             : base(id)
         {

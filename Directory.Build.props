@@ -1,0 +1,48 @@
+<Project>
+  <PropertyGroup>
+   <Authors>Lutando Ngqakaza</Authors>
+    <Company>Lutando Ngqakaza</Company>
+    <Copyright>Copyright (c) Lutando Ngqakaza 2018 - 2020</Copyright>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Lutando/Akkatecture</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <NeutralLanguage>en-GB</NeutralLanguage>
+    <PackageReleaseNotes>Externally Updated</PackageReleaseNotes>
+    <PackageIconUrl>https://akkatecture.net/logos/logo-512.png</PackageIconUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+    
+  <PropertyGroup>
+      <NoWarn>NU5104</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NetCoreAppVersion>netcoreapp2.2</NetCoreAppVersion>
+    <NetStandardVersion>netstandard2.0</NetStandardVersion>
+    <AkkaVersion>1.4.10</AkkaVersion>
+    <AkkaPersistenceVersion>1.4.10</AkkaPersistenceVersion>
+    <AkkaPersistenceQueryVersion>1.4.10</AkkaPersistenceQueryVersion>
+    <AkkaRemoteVersion>1.4.10</AkkaRemoteVersion>
+    <AkkaRemoteTestKitVersion>1.4.10</AkkaRemoteTestKitVersion>
+    <AkkaClusterVersion>1.4.10</AkkaClusterVersion>
+    <AkkaClusterShardingVersion>1.4.10</AkkaClusterShardingVersion>
+    <AkkaClusterToolsVersion>1.4.10</AkkaClusterToolsVersion>
+    <AkkaTestKitVersion>1.4.10</AkkaTestKitVersion>
+    <AkkaClusterTestKitVersion>1.4.10</AkkaClusterTestKitVersion>
+    <AkkaTestKitXunitVersion>1.4.10</AkkaTestKitXunitVersion>
+    <AkkatectureMultiNodeSharedVersion>0.5.1</AkkatectureMultiNodeSharedVersion>
+    <XunitVersion>2.4.1</XunitVersion>
+    <XunitRunnerVSVersion>2.4.2</XunitRunnerVSVersion>
+    <XunitRunnerUtilityVersion>2.4.1</XunitRunnerUtilityVersion>
+    <CoverletMSBuildVersion>2.9.0</CoverletMSBuildVersion>
+    <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
+    <TestSdkVersion>16.6.1</TestSdkVersion>
+    <SourceLinkGithubVersion>1.0.0</SourceLinkGithubVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+</Project>

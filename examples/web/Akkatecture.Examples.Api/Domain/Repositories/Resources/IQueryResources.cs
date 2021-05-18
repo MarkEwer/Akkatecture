@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -29,7 +29,7 @@ namespace Akkatecture.Examples.Api.Domain.Repositories.Resources
 {
     public interface IQueryResources
     {
-        Task<ResourcesReadModel> Find(Guid id);
-        Task<IReadOnlyCollection<ResourcesReadModel>> FindAll();
+        Task<ResourcesProjection> Find(Guid id);
+        Task<IReadOnlyCollection<ResourcesProjection>> FindAll();
     }
 }

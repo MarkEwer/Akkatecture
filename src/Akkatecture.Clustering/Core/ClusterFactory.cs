@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -25,18 +25,18 @@ using System;
 using System.Linq.Expressions;
 using Akka.Actor;
 using Akka.Cluster.Sharding;
+using Akka.Persistence;
 using Akkatecture.Aggregates;
 using Akkatecture.Clustering.Dispatchers;
 using Akkatecture.Core;
-using Akkatecture.Extensions;
 using Akkatecture.Sagas;
 using Akkatecture.Sagas.AggregateSaga;
 
 namespace Akkatecture.Clustering.Core
 {
-    public class ClusterFactory<TAggregateManager,TAggregate,TIdentity>
-        where TAggregateManager : ActorBase, IAggregateManager<TAggregate, TIdentity>
-        where TAggregate : IAggregateRoot<TIdentity>
+    public static class ClusterFactory<TAggregateManager,TAggregate,TIdentity>
+        where TAggregateManager : ReceiveActor, IAggregateManager<TAggregate, TIdentity>
+        where TAggregate : ReceivePersistentActor, IAggregateRoot<TIdentity>
         where TIdentity : IIdentity
     {
         public static IActorRef StartClusteredAggregate(
@@ -46,15 +46,13 @@ namespace Akkatecture.Clustering.Core
             var clusterSharding = ClusterSharding.Get(actorSystem);
             var clusterShardingSettings = clusterSharding.Settings;
 
-            var shardResolver = new ShardResolvers(numberOfShards);
-
+            var aggregateManagerProps = Props.Create<TAggregateManager>();
+            
             var shardRef = clusterSharding.Start(
                 typeof(TAggregateManager).Name,
-                Props.Create<TAggregateManager>(),
+                Props.Create(() => new ClusterParentProxy(aggregateManagerProps, true)),
                 clusterShardingSettings,
-                ShardIdentityExtractors
-                    .AggregateIdentityExtractor<TAggregate, TIdentity>,
-                shardResolver.AggregateShardResolver<TAggregate, TIdentity>
+                new MessageExtractor<TAggregate, TIdentity>(numberOfShards)
             );
 
             return shardRef;
@@ -68,15 +66,13 @@ namespace Akkatecture.Clustering.Core
             var clusterSharding = ClusterSharding.Get(actorSystem);
             var clusterShardingSettings = clusterSharding.Settings;
 
-            var shardResolver = new ShardResolvers(numberOfShards);
-
+            var aggregateManagerProps = Props.Create(aggregateManagerFactory);
+            
             var shardRef = clusterSharding.Start(
                 typeof(TAggregateManager).Name,
-                Props.Create<TAggregateManager>(aggregateManagerFactory),
+                Props.Create(() => new ClusterParentProxy(aggregateManagerProps, false)),
                 clusterShardingSettings,
-                ShardIdentityExtractors
-                    .AggregateIdentityExtractor<TAggregate, TIdentity>,
-                shardResolver.AggregateShardResolver<TAggregate, TIdentity>
+                new MessageExtractor<TAggregate, TIdentity>(numberOfShards)
             );
 
             return shardRef;
@@ -89,14 +85,10 @@ namespace Akkatecture.Clustering.Core
         {
             var clusterSharding = ClusterSharding.Get(actorSystem);
 
-            var shardResolver = new ShardResolvers(numberOfShards);
-
             var shardRef = clusterSharding.StartProxy(
                 typeof(TAggregateManager).Name,
                 clusterRoleName,
-                ShardIdentityExtractors
-                    .AggregateIdentityExtractor<TAggregate, TIdentity>,
-                shardResolver.AggregateShardResolver<TAggregate, TIdentity>
+                new MessageExtractor<TAggregate, TIdentity>(numberOfShards)
             );
             
             return shardRef;
@@ -104,11 +96,11 @@ namespace Akkatecture.Clustering.Core
         
     }
 
-    public class ClusterFactory<TAggregateSagaManager, TAggregateSaga, TIdentity, TSagaLocator>
-        where TAggregateSagaManager : ActorBase, IAggregateSagaManager<TAggregateSaga, TIdentity, TSagaLocator>
-        where TAggregateSaga : IAggregateSaga<TIdentity>
+    public static class ClusterFactory<TAggregateSagaManager, TAggregateSaga, TIdentity, TSagaLocator>
+        where TAggregateSagaManager : ReceiveActor ,IAggregateSagaManager<TAggregateSaga, TIdentity, TSagaLocator>
+        where TAggregateSaga : ReceivePersistentActor, IAggregateSaga<TIdentity>
         where TIdentity : SagaId<TIdentity>
-        where TSagaLocator : class, ISagaLocator<TIdentity>
+        where TSagaLocator : class, ISagaLocator<TIdentity>, new()
     {
         public static IActorRef StartClusteredAggregateSaga(
             ActorSystem actorSystem,
@@ -124,20 +116,19 @@ namespace Akkatecture.Clustering.Core
             var clusterSharding = ClusterSharding.Get(actorSystem);
             var clusterShardingSettings = clusterSharding.Settings;
 
-            var shardResolver = new ShardResolvers(numberOfShards);
-
+            var aggregateSagaManagerProps = Props.Create<TAggregateSagaManager>(sagaFactory);
+            
             var shardRef = clusterSharding.Start(
                 typeof(TAggregateSagaManager).Name,
-                Props.Create<TAggregateSagaManager>(sagaFactory,false),
+                Props.Create(() => new ClusterParentProxy(aggregateSagaManagerProps, true)),
                 clusterShardingSettings,
-                ShardIdentityExtractors
-                    .AggregateSagaIdentityExtractor<TAggregateSagaManager, TAggregateSaga, TIdentity, TSagaLocator>,
-                shardResolver.AggregateSagaShardResolver<TAggregateSagaManager, TAggregateSaga, TIdentity, TSagaLocator>
+                new MessageExtractor<TAggregateSagaManager, TAggregateSaga, TIdentity, TSagaLocator>(numberOfShards)
             );
-
+            
+            
             actorSystem.ActorOf(Props.Create(() =>
                 new ShardedAggregateSagaDispatcher<TAggregateSagaManager, TAggregateSaga, TIdentity, TSagaLocator>(
-                    clusterRoleName, numberOfShards)));
+                    clusterRoleName, numberOfShards)),$"{typeof(TAggregateSaga).Name}Dispatcher");
 
             return shardRef;
         }
@@ -147,27 +138,15 @@ namespace Akkatecture.Clustering.Core
             string clusterRoleName,
             int numberOfShards = 12)
         {
-            if (typeof(TAggregateSagaManager) != typeof(AggregateSagaManager<,,>))
-            {
-                throw new ArgumentException($"{typeof(TAggregateSagaManager).PrettyPrint()} is not a {typeof(AggregateSagaManager<,,>).PrettyPrint()}");
-            }
             var clusterSharding = ClusterSharding.Get(actorSystem);
-
-            var shardResolver = new ShardResolvers(numberOfShards);
-
+            
             var shardRef = clusterSharding.StartProxy(
                 typeof(TAggregateSagaManager).Name,
                 clusterRoleName,
-                ShardIdentityExtractors
-                    .AggregateSagaIdentityExtractor<TAggregateSagaManager, TAggregateSaga, TIdentity, TSagaLocator>,
-                shardResolver.AggregateSagaShardResolver<TAggregateSagaManager, TAggregateSaga, TIdentity, TSagaLocator>
+                new MessageExtractor<TAggregateSagaManager, TAggregateSaga, TIdentity, TSagaLocator>(numberOfShards)
             );
 
             return shardRef;
         }
-
     }
-
-
-
 }

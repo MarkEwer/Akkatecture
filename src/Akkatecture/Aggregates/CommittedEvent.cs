@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -27,37 +27,54 @@
 
 using System;
 using Akkatecture.Core;
+using Akkatecture.Extensions;
 
 namespace Akkatecture.Aggregates
 {
     public class CommittedEvent<TAggregate, TIdentity, TAggregateEvent> : ICommittedEvent<TAggregate, TIdentity, TAggregateEvent>
         where TAggregate : IAggregateRoot<TIdentity>
         where TIdentity : IIdentity
-        where TAggregateEvent : IAggregateEvent<TAggregate, TIdentity>
+        where TAggregateEvent : class, IAggregateEvent<TAggregate, TIdentity>
     {
-        public TAggregateEvent AggregateEvent { get; }
         public TIdentity AggregateIdentity { get; }
-        public Metadata Metadata { get; }
+        public TAggregateEvent AggregateEvent { get; }
+	    public Metadata Metadata { get; }
+        public long AggregateSequenceNumber { get; }
+        public DateTimeOffset Timestamp { get; }
 
         public CommittedEvent(
             TIdentity aggregateIdentity,
             TAggregateEvent aggregateEvent,
-            Metadata metadata)
+            Metadata metadata,
+            DateTimeOffset timestamp,
+            long aggregateSequenceNumber)
         {
             if (aggregateEvent == null) throw new ArgumentNullException(nameof(aggregateEvent));
+            if (metadata == null) throw new ArgumentNullException(nameof(metadata));
+            if (timestamp == default(DateTimeOffset)) throw new ArgumentNullException(nameof(timestamp));
             if (aggregateIdentity == null || string.IsNullOrEmpty(aggregateIdentity.Value)) throw new ArgumentNullException(nameof(aggregateIdentity));
-            
+            if (aggregateSequenceNumber <= 0) throw new ArgumentOutOfRangeException(nameof(aggregateSequenceNumber));
             
             AggregateIdentity = aggregateIdentity;
+            AggregateSequenceNumber = aggregateSequenceNumber;
             AggregateEvent = aggregateEvent;
             Metadata = metadata;
+            Timestamp = timestamp;
         }
-        
+
+        public IIdentity GetIdentity()
+        {
+            return AggregateIdentity;
+        }
+
         public IAggregateEvent GetAggregateEvent()
         {
             return AggregateEvent;
         }
-
         
+        public override string ToString()
+        {
+            return $"{typeof(TAggregate).PrettyPrint()} v{AggregateSequenceNumber}/{typeof(TAggregateEvent).PrettyPrint()}:{AggregateIdentity}";
+        }
     }
 }

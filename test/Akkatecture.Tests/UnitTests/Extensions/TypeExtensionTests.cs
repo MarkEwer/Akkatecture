@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -66,6 +66,12 @@ namespace Akkatecture.Tests.UnitTests.Extensions
             aggregateName.Value.Should().Be(expectedAggregateName);
         }
 
+        [Fact]
+        public void AggregateName_WithNullString_Throws()
+        {
+            this.Invoking(test => new AggregateNameAttribute(null)).Should().Throw<ArgumentNullException>();
+        }
+
         public class FooId : Identity<FooId>
         {
             public FooId(string value) : base(value)
@@ -89,13 +95,13 @@ namespace Akkatecture.Tests.UnitTests.Extensions
         }
 
         public class FooStateWithAttribute : AggregateState<FooAggregateWithAttribute, FooId,
-            IEventApplier<FooAggregateWithAttribute, FooId>>
+            IMessageApplier<FooAggregateWithAttribute, FooId>>
         {
                 
         }
 
         public class FooStateWithOutAttribute : AggregateState<FooAggregateWithOutAttribute, FooId,
-            IEventApplier<FooAggregateWithOutAttribute, FooId>>
+            IMessageApplier<FooAggregateWithOutAttribute, FooId>>
         {
 
         }

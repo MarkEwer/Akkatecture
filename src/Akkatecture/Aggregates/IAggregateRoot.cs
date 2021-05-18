@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -25,7 +25,6 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-using System.Collections.Generic;
 using Akkatecture.Core;
 
 namespace Akkatecture.Aggregates
@@ -33,17 +32,9 @@ namespace Akkatecture.Aggregates
     public interface IAggregateRoot
     {
         IAggregateName Name { get; }
-        
         long Version { get; }
-        
-        bool IsNew { get; }
-        
+        bool IsNew { get; }      
         bool HasSourceId(ISourceId sourceId);
-
-        void ApplyEvents(IEnumerable<IAggregateEvent> aggregateEvents);
-
-        void ApplyEvents(IReadOnlyCollection<IDomainEvent> domainEvents);
-
         IIdentity GetIdentity();
     }
 

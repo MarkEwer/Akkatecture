@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -34,7 +34,7 @@ namespace Akkatecture.Sagas.AggregateSaga
     public interface IAggregateSagaManager<TAggregateSaga, TIdentity, TSagaLocator> : IAggregateSagaManager
         where TAggregateSaga : IAggregateSaga<TIdentity>
         where TIdentity : SagaId<TIdentity>
-        where TSagaLocator : ISagaLocator<TIdentity>
+        where TSagaLocator : class, ISagaLocator<TIdentity>, new()
     {
         Expression<Func<TAggregateSaga>> SagaFactory { get; }
     }

@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -49,9 +49,9 @@ namespace Akkatecture.Specifications.Provided
             return _string.Value;
         }
 
-        protected override IEnumerable<string> IsNotSatisfiedBecause(T account)
+        protected override IEnumerable<string> IsNotSatisfiedBecause(T aggregate)
         {
-            if (!_predicate(account))
+            if (!_predicate(aggregate))
             {
                 yield return $"'{_string.Value}' is not satisfied";
             }

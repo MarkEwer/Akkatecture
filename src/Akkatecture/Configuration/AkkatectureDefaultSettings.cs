@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -30,11 +30,6 @@ namespace Akkatecture.Configuration
         public static Config DefaultConfig()
         {
             return ConfigurationFactory.FromResource<AkkatectureDefaultSettings>("Akkatecture.Configuration.reference.conf");
-        }
-
-        public static Config OpinionatedConfig()
-        {
-            return ConfigurationFactory.FromResource<AkkatectureDefaultSettings>("Akkatecture.Configuration.defaults.conf");
         }
 
     }

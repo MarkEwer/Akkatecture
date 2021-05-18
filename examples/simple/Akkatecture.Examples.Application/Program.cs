@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -28,7 +28,7 @@ using Akkatecture.Examples.Domain.Model.UserAccount.Commands;
 
 namespace Akkatecture.Examples.Application
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {

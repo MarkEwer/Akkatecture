@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -44,10 +44,10 @@ namespace Akkatecture.Specifications.Provided
             _specification2 = specification2 ?? throw new ArgumentNullException(nameof(specification2));
         }
 
-        protected override IEnumerable<string> IsNotSatisfiedBecause(T account)
+        protected override IEnumerable<string> IsNotSatisfiedBecause(T aggregate)
         {
-            var reasons1 = _specification1.WhyIsNotSatisfiedBy(account).ToList();
-            var reasons2 = _specification2.WhyIsNotSatisfiedBy(account).ToList();
+            var reasons1 = _specification1.WhyIsNotSatisfiedBy(aggregate).ToList();
+            var reasons2 = _specification2.WhyIsNotSatisfiedBy(aggregate).ToList();
 
             if (!reasons1.Any() || !reasons2.Any())
             {

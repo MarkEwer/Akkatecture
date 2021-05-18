@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -34,23 +34,23 @@ namespace Akkatecture.Aggregates
     public class DomainEvent<TAggregate, TIdentity, TAggregateEvent> : IDomainEvent<TAggregate, TIdentity, TAggregateEvent>
         where TAggregate : IAggregateRoot<TIdentity>
         where TIdentity : IIdentity
-        where TAggregateEvent : IAggregateEvent<TAggregate, TIdentity>
+        where TAggregateEvent : class, IAggregateEvent<TAggregate, TIdentity>
     {
         public Type AggregateType => typeof(TAggregate);
         public Type IdentityType => typeof(TIdentity);
         public Type EventType => typeof(TAggregateEvent);
 
-        public long AggregateSequenceNumber { get; }
-        public TAggregateEvent AggregateEvent { get; }
         public TIdentity AggregateIdentity { get; }
-        public IMetadata Metadata { get; }
+        public TAggregateEvent AggregateEvent { get; }
+        public long AggregateSequenceNumber { get; }
+        public Metadata Metadata { get; }
         public DateTimeOffset Timestamp { get; }
 
         public DomainEvent(
-            TAggregateEvent aggregateEvent,
-            IMetadata metadata,
-            DateTimeOffset timestamp,
             TIdentity aggregateIdentity,
+            TAggregateEvent aggregateEvent,
+            Metadata metadata,
+            DateTimeOffset timestamp,
             long aggregateSequenceNumber)
         {
             if (aggregateEvent == null) throw new ArgumentNullException(nameof(aggregateEvent));

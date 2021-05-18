@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -29,7 +29,7 @@ namespace Akkatecture.Examples.Api.Domain.Repositories.Operations
 {
     public interface IQueryOperations
     {
-        Task<OperationsReadModel> Find(Guid operationId);
-        Task<IReadOnlyCollection<OperationsReadModel>> FindAll();
+        Task<OperationsProjection> Find(Guid operationId);
+        Task<IReadOnlyCollection<OperationsProjection>> FindAll();
     }
 }

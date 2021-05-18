@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -28,12 +28,13 @@ namespace Akkatecture.Sagas.AggregateSaga
 {
     public class AggregateSagaManagerSettings
     {
+        private static readonly string _section = "akkatecture.aggregate-saga-manager";
         public readonly bool AutoSubscribe;
         public readonly bool AutoSpawnOnReceive;
         public AggregateSagaManagerSettings(Config config)
         {
             var aggregateSagaManagerConfig = config.WithFallback(AkkatectureDefaultSettings.DefaultConfig());
-            aggregateSagaManagerConfig = aggregateSagaManagerConfig.GetConfig("akkatecture.aggregate-saga-manager");
+            aggregateSagaManagerConfig = aggregateSagaManagerConfig.GetConfig(_section);
 
             AutoSpawnOnReceive = aggregateSagaManagerConfig.GetBoolean("auto-spawn-on-receive");
             AutoSubscribe = aggregateSagaManagerConfig.GetBoolean("auto-subscribe");

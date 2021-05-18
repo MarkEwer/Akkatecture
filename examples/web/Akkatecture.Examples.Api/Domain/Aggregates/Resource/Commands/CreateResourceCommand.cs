@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -50,13 +50,12 @@ namespace Akkatecture.Examples.Api.Domain.Aggregates.Resource.Commands
                 var aggregateEvent = new ResourceCreatedEvent();
                 aggregate.Emit(aggregateEvent);
 
-
                 var executionResult = new SuccessExecutionResult();
                 context.Sender.Tell(executionResult);
             }
             else
             {
-                var executionResult = new FailedExecutionResult(new List<string> {"aggregate is already created"});
+                var executionResult = new FailedExecutionResult(new List<string>{"aggregate is already created"});
                 context.Sender.Tell(executionResult);
             }
         }

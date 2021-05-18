@@ -1,29 +1,32 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <ProjectGuid>{D9461EE2-175F-4F2B-AD75-FB93C09ABCDE}</ProjectGuid>
+    <SonarQubeExclude>true</SonarQubeExclude>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>$(NetCoreAppVersion)</TargetFramework>
+    <IsPackable>false</IsPackable>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <Title>Akkatecture.TestHelpers</Title>
-    <Authors>Lutando Ngqakaza</Authors>
-    <Company>Lutando Ngqakaza</Company>
-    <Copyright>Copyright (c) Lutando Ngqakaza 2018 - 2018</Copyright>
     <Description>
         Akkatecture.TestHelpers project holds all the necassary helper classes and
         methods to make the actual tests easier to maintain and read.
     </Description>
-    <PackageTags>akka cqrs es eventsourcing</PackageTags>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/Lutando/Akkatecture</RepositoryUrl>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/Lutando/Akkatecture/master/LICENSE</PackageLicenseUrl>
-    <NeutralLanguage>en-GB</NeutralLanguage>
-    <PackageReleaseNotes>Externally Updated</PackageReleaseNotes>
   </PropertyGroup>
+  
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Akkatecture.TestFixture\Akkatecture.TestFixture.csproj" />
     <ProjectReference Include="..\..\src\Akkatecture\Akkatecture.csproj" />
   </ItemGroup>
+  
   <ItemGroup>
-    <PackageReference Include="Moq" Version="4.8.2" />
-  </ItemGroup>
+    <PackageReference Include="Akka.TestKit" Version="$(AkkaTestKitVersion)" />
+  </ItemGroup> 
+  
 </Project>

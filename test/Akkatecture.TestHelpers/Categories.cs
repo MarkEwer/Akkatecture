@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -23,10 +23,9 @@
 
 namespace Akkatecture.TestHelpers
 {
-    public sealed class Categories
+    public static class Categories
     {
         public const string Integration = "integration";
-        
         public const string Unit = "unit";
     }
 }

@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -27,13 +27,13 @@ using Akkatecture.Examples.Domain.Model.UserAccount.Events;
 
 namespace Akkatecture.Examples.Domain.Model.UserAccount
 {
-    public class UserAccountAggregate : AggregateRoot<UserAccountAggregate,UserAccountId,UserAccountState>
+    public class UserAccountAggregate : AggregateRoot<UserAccountAggregate,UserAccountId,UserAccountState>,
+        IExecute<CreateUserAccountCommand>,
+        IExecute<UserAccountChangeNameCommand>
     {
         public UserAccountAggregate(UserAccountId id)
             : base(id)
         {
-            Command<CreateUserAccountCommand>(Execute);
-            Command<UserAccountChangeNameCommand>(Execute);
         }
         
         public bool Execute(CreateUserAccountCommand command)

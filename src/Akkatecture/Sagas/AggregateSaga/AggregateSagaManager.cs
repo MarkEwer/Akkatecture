@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -22,64 +22,85 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Persistence;
 using Akkatecture.Aggregates;
 using Akkatecture.Extensions;
+using Akkatecture.Messages;
 
 namespace Akkatecture.Sagas.AggregateSaga
 {
     public abstract class AggregateSagaManager<TAggregateSaga, TIdentity, TSagaLocator> : ReceiveActor, IAggregateSagaManager<TAggregateSaga, TIdentity, TSagaLocator>
-        where TIdentity : SagaId<TIdentity>
-        where TSagaLocator : class, ISagaLocator<TIdentity>
         where TAggregateSaga : ReceivePersistentActor, IAggregateSaga<TIdentity>
+        where TIdentity : SagaId<TIdentity>
+        where TSagaLocator : class, ISagaLocator<TIdentity>, new()
     {
+        private IReadOnlyList<Type> _subscriptionTypes { get; }
         protected ILoggingAdapter Logger { get; }
         public Expression<Func<TAggregateSaga>> SagaFactory { get; }
         protected TSagaLocator SagaLocator { get; }
         public AggregateSagaManagerSettings Settings { get; }
 
-        protected AggregateSagaManager(Expression<Func<TAggregateSaga>> sagaFactory, bool autoSubscribe = true)
+        protected AggregateSagaManager(Expression<Func<TAggregateSaga>> sagaFactory)
         {
             Logger = Context.GetLogger();
 
+            _subscriptionTypes = new List<Type>();
 
-            SagaLocator = (TSagaLocator)Activator.CreateInstance(typeof(TSagaLocator));
-
+            SagaLocator = new TSagaLocator();
             SagaFactory = sagaFactory;
             Settings = new AggregateSagaManagerSettings(Context.System.Settings.Config);
 
             var sagaType = typeof(TAggregateSaga);
 
-            if (autoSubscribe && Settings.AutoSubscribe)
+            if (Settings.AutoSubscribe)
             {
                 var sagaEventSubscriptionTypes =
                     sagaType
                         .GetSagaEventSubscriptionTypes();
 
-                foreach (var type in sagaEventSubscriptionTypes)
-                {
-                    Context.System.EventStream.Subscribe(Self, type);
-                }
-                
                 var asyncSagaEventSubscriptionTypes =
                     sagaType
                         .GetAsyncSagaEventSubscriptionTypes();
 
-                foreach (var type in asyncSagaEventSubscriptionTypes)
+                var subscriptionTypes = new List<Type>();
+                
+                subscriptionTypes.AddRange(sagaEventSubscriptionTypes);
+                subscriptionTypes.AddRange(asyncSagaEventSubscriptionTypes);
+
+                _subscriptionTypes = subscriptionTypes.AsReadOnly();
+                
+                foreach (var type in _subscriptionTypes)
                 {
                     Context.System.EventStream.Subscribe(Self, type);
                 }
+
             }
 
             if (Settings.AutoSpawnOnReceive)
             {
                 Receive<IDomainEvent>(Handle);
             }
-            
+
+            Receive<UnsubscribeFromAll>(Handle);
+        }
+
+        protected virtual bool Handle(UnsubscribeFromAll command)
+        {
+            UnsubscribeFromAllTopics();
+
+            return true;
+        }
+
+        protected void UnsubscribeFromAllTopics()
+        {
+            foreach (var type in _subscriptionTypes)
+            {
+                Context.System.EventStream.Unsubscribe(Self, type);
+            }
         }
         
         protected virtual bool Handle(IDomainEvent domainEvent)
@@ -92,7 +113,7 @@ namespace Akkatecture.Sagas.AggregateSaga
 
         protected virtual bool Terminate(Terminated message)
         {
-            Logger.Warning($"{GetType().PrettyPrint()}: {message.ActorRef.Path} has terminated.");
+            Logger.Warning("AggregateSaga of Type={0}, and Id={1}; has terminated.",typeof(TAggregateSaga).PrettyPrint(), message.ActorRef.Path.Name);
             Context.Unwatch(message.ActorRef);
             return true;
         }
@@ -104,8 +125,8 @@ namespace Akkatecture.Sagas.AggregateSaga
                 withinTimeMilliseconds: 3000,
                 localOnlyDecider: x =>
                 {
-
-                    Logger.Error($"[{GetType().PrettyPrint()}] Exception={x.ToString()} to be decided.");
+                    Logger.Warning("{0} will supervise Exception={1} to be decided as {2}.",
+                        GetType().PrettyPrint(), x.ToString(),Directive.Restart);
                     return Directive.Restart;
                 });
         }
@@ -113,7 +134,7 @@ namespace Akkatecture.Sagas.AggregateSaga
         protected IActorRef FindOrSpawn(TIdentity sagaId)
         {
             var saga = Context.Child(sagaId);
-            if (Equals(saga, ActorRefs.Nobody))
+            if (saga.IsNobody())
             {
                 return Spawn(sagaId);
             }
@@ -126,7 +147,5 @@ namespace Akkatecture.Sagas.AggregateSaga
             Context.Watch(saga);
             return saga;
         }
-        
     }
-    
 }

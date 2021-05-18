@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -21,14 +21,35 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using Akka.Configuration;
+
 namespace Akkatecture.TestHelpers.Akka
 {
     public static class Configuration
     {
         public static string Config =
-            @"  akka.loglevel = ""DEBUG""
-                akka.stdout-loglevel = ""DEBUG""
+            @"  akka.loglevel = ""INFO""
+                akka.stdout-loglevel = ""INFO""
                 akka.actor.serialize-messages = on
+                loggers = [""Akka.TestKit.TestEventListener, Akka.TestKit""] 
+                akka.persistence.snapshot-store {
+                    plugin = ""akka.persistence.snapshot-store.inmem""
+                    # List of snapshot stores to start automatically. Use "" for the default snapshot store.
+                    auto-start-snapshot-stores = []
+                }
+                akka.persistence.snapshot-store.inmem {
+                    # Class name of the plugin.
+                    class = ""Akka.Persistence.Snapshot.MemorySnapshotStore, Akka.Persistence""
+                    # Dispatcher for the plugin actor.
+                    plugin-dispatcher = ""akka.actor.default-dispatcher""
+                }
             ";
+        
+        public static Config ConfigWithTestScheduler =
+
+            ConfigurationFactory.ParseString(@"
+                akkatecture.job-scheduler.tick-interval = 500ms
+                akka.scheduler.implementation = ""Akka.TestKit.TestScheduler, Akka.TestKit""").WithFallback(
+                ConfigurationFactory.ParseString(Config));
     }
 }

@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -31,8 +31,9 @@ namespace Akkatecture.TestHelpers.Aggregates.Commands
         public Test Test { get; }
         public AddTestCommand(
             TestAggregateId aggregateId,
+            CommandId sourceId,
             Test test)
-            : base(aggregateId)
+            : base(aggregateId, sourceId)
         {
             Test = test;
         }

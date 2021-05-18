@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -27,17 +27,25 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Akkatecture.Extensions;
 
 namespace Akkatecture.ValueObjects
 {
     public abstract class SingleValueObject<T> : ValueObject, IComparable, ISingleValueObject
-        where T : IComparable, IComparable<T>
+        where T : IComparable
     {
+        private static readonly Type Type = typeof(T);
+        private static readonly TypeInfo TypeInfo = typeof(T).GetTypeInfo();
         public T Value { get; }
 
         protected SingleValueObject(T value)
         {
+            if (TypeInfo.IsEnum && !Enum.IsDefined(Type, value))
+            {
+                throw new ArgumentException($"The value '{value}' isn't defined in enum '{Type.PrettyPrint()}'");
+            }
+            
             Value = value;
         }
 

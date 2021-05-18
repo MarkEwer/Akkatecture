@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -39,18 +39,12 @@ namespace Akkatecture.Core
         where T : Identity<T>
     {
         // ReSharper disable StaticMemberInGenericType
-        private static readonly string Name;
-        private static readonly Regex ValueValidation;
+        private static readonly Regex NameReplace = new Regex("Id$");
+        private static readonly string Name = NameReplace.Replace(typeof(T).Name, string.Empty).ToLowerInvariant();
+        private static readonly Regex ValueValidation= new Regex(
+            @"^[a-z0-9]+\-(?<guid>[a-f0-9]{8}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{12})$",
+            RegexOptions.Compiled);
         // ReSharper enable StaticMemberInGenericType
-
-        static Identity()
-        {
-            var nameReplace = new Regex("Id$");
-            Name = nameReplace.Replace(typeof(T).Name, string.Empty).ToLowerInvariant();
-            ValueValidation = new Regex(
-                @"^[a-z0-9]+\-(?<guid>[a-f0-9]{8}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{12})$",
-                RegexOptions.Compiled);
-        }
 
         public static T New => With(Guid.NewGuid());
 

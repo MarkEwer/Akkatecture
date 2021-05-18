@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -25,6 +25,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using System;
 using Akkatecture.Core;
 
 namespace Akkatecture.Aggregates
@@ -32,7 +33,14 @@ namespace Akkatecture.Aggregates
     public interface ICommittedEvent
     {
 
+	    long AggregateSequenceNumber { get; }
+	    Metadata Metadata { get; }
+	    DateTimeOffset Timestamp { get; }
+
+	    IIdentity GetIdentity();
+	    IAggregateEvent GetAggregateEvent();
     }
+
     public interface ICommittedEvent<TAggregate, out TIdentity> : ICommittedEvent
         where TAggregate : IAggregateRoot<TIdentity>
         where TIdentity : IIdentity
@@ -43,7 +51,7 @@ namespace Akkatecture.Aggregates
     public interface ICommittedEvent<TAggregate, out TIdentity, out TAggregateEvent> : ICommittedEvent<TAggregate, TIdentity>
         where TAggregate : IAggregateRoot<TIdentity>
         where TIdentity : IIdentity
-        where TAggregateEvent : IAggregateEvent<TAggregate, TIdentity>
+        where TAggregateEvent : class, IAggregateEvent<TAggregate, TIdentity>
     {
         TAggregateEvent AggregateEvent { get; }
     }

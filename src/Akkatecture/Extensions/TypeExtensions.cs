@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -30,10 +30,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Akkatecture.Aggregates;
+using Akkatecture.Aggregates.Snapshot;
 using Akkatecture.Core;
+using Akkatecture.Events;
+using Akkatecture.Jobs;
 using Akkatecture.Sagas;
+using Akkatecture.Sagas.SagaTimeouts;
 using Akkatecture.Subscribers;
 
 namespace Akkatecture.Extensions
@@ -118,6 +121,26 @@ namespace Akkatecture.Extensions
                         t.Name);
                 });
         }
+        
+        private static readonly ConcurrentDictionary<Type, JobName> JobNames = new ConcurrentDictionary<Type, JobName>();
+
+        public static JobName GetJobName(
+            this Type jobType)
+        {
+            return JobNames.GetOrAdd(
+                jobType,
+                t =>
+                {
+                    if (!typeof(IJob).GetTypeInfo().IsAssignableFrom(jobType))
+                    {
+                        throw new ArgumentException($"Type '{jobType.PrettyPrint()}' is not a job");
+                    }
+
+                    return new JobName(
+                        t.GetTypeInfo().GetCustomAttributes<JobNameAttribute>().SingleOrDefault()?.Name ??
+                        t.Name);
+                });
+        }
 
         internal static IReadOnlyDictionary<Type, Action<T, IAggregateEvent>> GetAggregateEventApplyMethods<TAggregate, TIdentity, T>(this Type type)
             where TAggregate : IAggregateRoot<TIdentity>
@@ -139,6 +162,28 @@ namespace Akkatecture.Extensions
                 .ToDictionary(
                     mi => mi.GetParameters()[0].ParameterType,
                     mi => ReflectionHelper.CompileMethodInvocation<Action<T, IAggregateEvent>>(type, "Apply", mi.GetParameters()[0].ParameterType));
+        }
+        
+        internal static IReadOnlyDictionary<Type, Action<T, IAggregateSnapshot>> GetAggregateSnapshotHydrateMethods<TAggregate, TIdentity, T>(this Type type)
+            where TAggregate : IAggregateRoot<TIdentity>
+            where TIdentity : IIdentity
+        {
+            var aggregateSnapshot = typeof(IAggregateSnapshot<TAggregate, TIdentity>);
+
+            return type
+                .GetTypeInfo()
+                .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(mi =>
+                {
+                    if (mi.Name != "Hydrate") return false;
+                    var parameters = mi.GetParameters();
+                    return
+                        parameters.Length == 1 &&
+                        aggregateSnapshot.GetTypeInfo().IsAssignableFrom(parameters[0].ParameterType);
+                })
+                .ToDictionary(
+                    mi => mi.GetParameters()[0].ParameterType,
+                    mi => ReflectionHelper.CompileMethodInvocation<Action<T, IAggregateSnapshot>>(type, "Hydrate", mi.GetParameters()[0].ParameterType));
         }
 
         internal static IReadOnlyDictionary<Type, Action<TAggregateState, IAggregateEvent>> GetAggregateStateEventApplyMethods<TAggregate, TIdentity, TAggregateState>(this Type type)
@@ -166,12 +211,6 @@ namespace Akkatecture.Extensions
 
         internal static IReadOnlyList<Type> GetAsyncDomainEventSubscriberSubscriptionTypes(this Type type)
         {
-            //TODO
-            //Check generic arguments for sanity
-            //add checks for iaggregateroot
-            //add checks for iidentity
-            //add checks for iaggregatevent
-
             var interfaces = type
                 .GetTypeInfo()
                 .GetInterfaces()
@@ -185,15 +224,25 @@ namespace Akkatecture.Extensions
 
             return domainEventTypes;
         }
+        
+        internal static IReadOnlyList<Type> GetAggregateExecuteTypes(this Type type)
+        {
+            var interfaces = type
+                .GetTypeInfo()
+                .GetInterfaces()
+                .Select(i => i.GetTypeInfo())
+                .ToList();
+            var domainEventTypes = interfaces
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IExecute<>))
+                .Select(i =>   i.GetGenericArguments()[0])
+                .ToList();
+            
+
+            return domainEventTypes;
+        }
 
         internal static IReadOnlyList<Type> GetDomainEventSubscriberSubscriptionTypes(this Type type)
         {
-            //TODO
-            //Check generic arguments for sanity
-            //add checks for iaggregateroot
-            //add checks for iidentity
-            //add checks for iaggregatevent
-
             var interfaces = type
                 .GetTypeInfo()
                 .GetInterfaces()
@@ -207,8 +256,7 @@ namespace Akkatecture.Extensions
 
             return domainEventTypes;
         }
-        
-        
+
         private static readonly ConcurrentDictionary<Type, AggregateName> AggregateNameCache = new ConcurrentDictionary<Type, AggregateName>();
         internal static AggregateName GetCommittedEventAggregateRootName(this Type type)
         {
@@ -222,25 +270,61 @@ namespace Akkatecture.Extensions
                         .Select(i => i.GetTypeInfo())
                         .ToList();
 
-                    var aggregateEvent = interfaces
+                    var aggregateType = interfaces
                         .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICommittedEvent<,>))
                         .Select(i => i.GetGenericArguments()[0]).SingleOrDefault();
 
 
-                    if (aggregateEvent != null)
-                        return aggregateEvent.GetAggregateName();
+                    if (aggregateType != null)
+                        return aggregateType.GetAggregateName();
 
                     throw new ArgumentException(nameof(type));
                 });
         }
         
+        private static readonly ConcurrentDictionary<Type, Type> AggregateEventTypeCache = new ConcurrentDictionary<Type, Type>();
+        internal static Type GetCommittedEventAggregateEventType(this Type type)
+        {
+            return AggregateEventTypeCache.GetOrAdd(
+                type,
+                t =>
+                {
+                    var interfaces = type
+                        .GetTypeInfo()
+                        .GetInterfaces()
+                        .Select(i => i.GetTypeInfo())
+                        .ToList();
+
+                    var aggregateEvent = interfaces
+                        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICommittedEvent<,,>))
+                        .Select(i => i.GetGenericArguments()[2]).SingleOrDefault();
+
+
+                    if (aggregateEvent != null)
+                        return aggregateEvent;
+
+                    throw new ArgumentException(nameof(type));
+                });
+        }
+        
+        internal static IReadOnlyList<Type> GetJobRunTypes(this Type type)
+        {
+            var interfaces = type
+                .GetTypeInfo()
+                .GetInterfaces()
+                .Select(i => i.GetTypeInfo())
+                .ToList();
+            var jobRunTypes = interfaces
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRun<>))
+                .Select(i =>   i.GetGenericArguments()[0])
+                .ToList();
+            
+
+            return jobRunTypes;
+        }
+        
         internal static IReadOnlyList<Type> GetAsyncSagaEventSubscriptionTypes(this Type type)
         {
-            //TODO
-            //add checks for iaggregateroot
-            //add checks for iidentity
-            //add checks for iaggregatevent
-
             var interfaces = type
                 .GetTypeInfo()
                 .GetInterfaces()
@@ -266,11 +350,6 @@ namespace Akkatecture.Extensions
         
         internal static IReadOnlyList<Type> GetSagaEventSubscriptionTypes(this Type type)
         {
-            //TODO
-            //add checks for iaggregateroot
-            //add checks for iidentity
-            //add checks for iaggregatevent
-
             var interfaces = type
                 .GetTypeInfo()
                 .GetInterfaces()
@@ -293,6 +372,78 @@ namespace Akkatecture.Extensions
 
             return startedByEventTypes;
         }
+        
+        internal static IReadOnlyList<Type> GetAsyncSagaTimeoutSubscriptionTypes(this Type type)
+        {
+            var interfaces = type
+                .GetTypeInfo()
+                .GetInterfaces()
+                .Select(i => i.GetTypeInfo())
+                .ToList();
+            
+            var sagaTimeoutSubscriptionTypes = interfaces
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ISagaHandlesTimeoutAsync<>))
+                .Select(t => t.GetGenericArguments()[0])
+                .ToList();
+            
+            return sagaTimeoutSubscriptionTypes;
+        }
+        internal static IReadOnlyList<Type> GetSagaTimeoutSubscriptionTypes(this Type type)
+        {
+            var interfaces = type
+                .GetTypeInfo()
+                .GetInterfaces()
+                .Select(i => i.GetTypeInfo())
+                .ToList();
+            
+            var sagaTimeoutSubscriptionTypes = interfaces
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ISagaHandlesTimeout<>))
+                .Select(t => t.GetGenericArguments()[0])
+                .ToList();
+            
+            return sagaTimeoutSubscriptionTypes;
+        }
+        
+        internal static IReadOnlyDictionary<Type, Func<T,IAggregateEvent, IAggregateEvent>> GetAggregateEventUpcastMethods<TAggregate, TIdentity, T>(this Type type)
+            where TAggregate : IAggregateRoot<TIdentity>
+            where TIdentity : IIdentity
+        {
+            var aggregateEventType = typeof(IAggregateEvent<TAggregate, TIdentity>);
+            
+            return type
+                .GetTypeInfo()
+                .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(mi =>
+                {
+                    if (mi.Name != "Upcast") 
+                        return false;
+                    var parameters = mi.GetParameters();
+                    return
+                        parameters.Length == 1 &&
+                        aggregateEventType.GetTypeInfo().IsAssignableFrom(parameters[0].ParameterType);
+                    
+                })
+                .ToDictionary(
+                    //problem might be here
+                    mi => mi.GetParameters()[0].ParameterType,
+                    mi => ReflectionHelper.CompileMethodInvocation<Func<T,IAggregateEvent, IAggregateEvent>>(type, "Upcast", mi.GetParameters()[0].ParameterType));           
+        }
+        
+        internal static IReadOnlyList<Type> GetAggregateEventUpcastTypes(this Type type)
+        {
+            var interfaces = type
+                .GetTypeInfo()
+                .GetInterfaces()
+                .Select(i => i.GetTypeInfo())
+                .ToList();
+            
+            var upcastableEventTypes = interfaces
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IUpcast<,>))
+                .Select(i =>   i.GetGenericArguments()[0])
+                .ToList();
+
+            return upcastableEventTypes;
+        }
 
         internal static Type GetBaseType(this Type type, string name)
         {
@@ -308,6 +459,5 @@ namespace Akkatecture.Extensions
             }
             return type;
         }
-
     }
 }

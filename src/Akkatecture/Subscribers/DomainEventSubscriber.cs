@@ -1,6 +1,6 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -22,40 +22,54 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Event;
 using Akkatecture.Extensions;
+using Akkatecture.Messages;
 
 namespace Akkatecture.Subscribers
 {
     public abstract class DomainEventSubscriber : ReceiveActor
     {
+        private IReadOnlyList<Type> SubscriptionTypes { get; }
+        protected ILoggingAdapter Logger { get; }
         public DomainEventSubscriberSettings Settings { get; }
 
-        protected DomainEventSubscriber()
+        protected DomainEventSubscriber(
+            DomainEventSubscriberSettings settings = null)
         {
-            Settings = new DomainEventSubscriberSettings(Context.System.Settings.Config);
+            Logger = Context.GetLogger();
+            if (settings == null)
+                Settings = new DomainEventSubscriberSettings(Context.System.Settings.Config);
+            else
+                Settings = settings;
+            
+            SubscriptionTypes = new List<Type>();
             
             if (Settings.AutoSubscribe)
             {
                 var type = GetType();
                 
-                var asyncSubscriptionTypes =
+                var asyncDomainEventSubscriptionTypes =
                     type
                         .GetAsyncDomainEventSubscriberSubscriptionTypes();
                 
-                var subscriptionTypes =
+                var domainEventsubscriptionTypes =
                     type
                         .GetDomainEventSubscriberSubscriptionTypes();
-
-                foreach (var subscriptionType in asyncSubscriptionTypes)
-                {
-                    Context.System.EventStream.Subscribe(Self, subscriptionType);
-                }
                 
-                foreach (var subscriptionType in subscriptionTypes)
+                var subscriptionTypes = new List<Type>();
+                
+                subscriptionTypes.AddRange(asyncDomainEventSubscriptionTypes);
+                subscriptionTypes.AddRange(domainEventsubscriptionTypes);
+
+                SubscriptionTypes = subscriptionTypes;
+                
+                foreach (var subscriptionType in SubscriptionTypes)
                 {
                     Context.System.EventStream.Subscribe(Self, subscriptionType);
                 }
@@ -66,6 +80,8 @@ namespace Akkatecture.Subscribers
                 InitReceives();
                 InitAsyncReceives();
             }
+            
+            Receive<UnsubscribeFromAll>(Handle);
         }
 
         public void InitReceives()
@@ -158,5 +174,21 @@ namespace Akkatecture.Subscribers
                 actorReceiveMethod.Invoke(this, new []{subscriptionFunction,null});
             }
         }
+        
+        protected virtual bool Handle(UnsubscribeFromAll command)
+        {
+            UnsubscribeFromAllTopics();
+
+            return true;
+        }
+        
+        protected void UnsubscribeFromAllTopics()
+        {
+            foreach (var type in SubscriptionTypes)
+            {
+                Context.System.EventStream.Unsubscribe(Self, type);
+            }
+        }
+        
     }
 }

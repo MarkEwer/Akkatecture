@@ -1,0 +1,67 @@
+# Akkatecture Development CI CD pipeline definition
+# This definition is responsible for building and testing
+# the project within the context of pull requests. as a
+# static build it only builds and tests the project.
+
+trigger: none
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+    - '*'
+  paths:
+    exclude:
+      - 'README.md'
+      - 'CODE_OF_CONDUCT.md'
+      - 'CHANGELOG.md'
+      - 'THIRD-PARTY-NOTICES.txt'
+
+variables:
+- template:  templates/variables-template.yaml
+- name: 'branch'
+  value: 'master'
+- name: 'feedVersion'
+  value: 'pr'
+- name: 'dayOfYear'
+  value: $(DayOfYear)
+- name: 'revCounter'
+  value: $(BuildRevision)
+- name: 'revision'
+  value: ${{ format('{0}{1}', variables.dayOfYear, variables.revCounter) }}
+
+name: ${{ format('{0}.{1}.{2}-{3}-{4}', variables.majorVersion, variables.minorVersion, variables.patchVersion, variables.feedVersion, variables.revision) }}
+
+jobs:
+  - job: Build
+    pool:
+      vmImage: $(vmImage)
+    variables:
+      buildConfiguration: 'Release'
+
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Install [Dotnet SDK]'
+      inputs:
+        packageType: sdk
+        version: 2.2.300
+
+    - template: templates/fake-template.yaml
+      parameters:
+        displayName: 'Restore [Akkatecture]'
+        target: Restore
+
+    - template: templates/fake-template.yaml
+      parameters:
+        displayName: 'Build [Akkatecture]'
+        target: Build
+
+    - template: templates/fake-template.yaml
+      parameters:
+        displayName: 'Test [Akkatecture.Tests]'
+        target: Test
+
+    - template: templates/fake-template.yaml
+      parameters:
+        displayName: 'Test [Akkatecture.Tests.MultiNode]'
+        target: MultiNodeTest

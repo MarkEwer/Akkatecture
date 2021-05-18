@@ -1,10 +1,10 @@
 ﻿// The MIT License (MIT)
 //
-// Copyright (c) 2015-2018 Rasmus Mikkelsen
-// Copyright (c) 2015-2018 eBay Software Foundation
+// Copyright (c) 2015-2020 Rasmus Mikkelsen
+// Copyright (c) 2015-2020 eBay Software Foundation
 // Modified from original source https://github.com/eventflow/EventFlow
 //
-// Copyright (c) 2018 Lutando Ngqakaza
+// Copyright (c) 2018 - 2020 Lutando Ngqakaza
 // https://github.com/Lutando/Akkatecture 
 // 
 // 
@@ -29,7 +29,6 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Persistence;
 using Akkatecture.Aggregates;
-using Akkatecture.Aggregates.ExecutionResults;
 using Akkatecture.Core;
 using Akkatecture.Extensions;
 
@@ -60,7 +59,7 @@ namespace Akkatecture.Commands
         {
             var logger = context.GetLogger();
             Handle(aggregate, context, command);
-            logger.Info($"{command.GetType().PrettyPrint()} handled in {GetType().PrettyPrint()}");
+            logger.Debug("Command of Type={0} handled in CommandHandler of Type={1}",command.GetType().PrettyPrint(), GetType().PrettyPrint());
             return true;
         }
 
